@@ -1,0 +1,74 @@
+version: '3.8'
+services:
+  ubuntubase:
+    build: ./ubuntu-base
+
+  web:
+    build: './web'
+    ports:
+      - "3000:3000"
+
+  search:
+    build: './search'
+    ports:
+      - "3001:3000"
+    depends_on: 
+      - database
+    environment:
+      - MONGO_DB_URI=mongodb://database/microservices
+
+  books:
+    build: './books'
+    ports:
+      - "3002:3000"
+    depends_on: 
+      - database
+    environment:
+      - MONGO_DB_URI=mongodb://database/microservices
+
+  videos:
+    build: './videos'
+    ports:
+      - "3003:3000"
+    depends_on: 
+      - database
+    environment:
+      - MONGO_DB_URI=mongodb://database/microservices
+
+  database:
+    build: ./mongodb
+    image: mongo
+    ports:
+      - "27017:27017"
+    # volumes:
+    #   - mongodb-data:/data/db/      
+    #   - mongodb-logs:/var/log/mongodb/  
+    
+  nginxproxy:
+    build: './nginx-proxy'
+    # image: nginx:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./web/public:/srv/www/static
+      # - ./nginx-proxy/config/default.conf:/etc/nginx/conf.d/default.conf      
+      # - ./nginx-proxy/conf.d:/etc/nginx/conf.d 
+    depends_on:
+      - web
+      - books
+      - search
+      - videos
+
+volumes:
+  mongodb-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${MONGODB_DATA_VOLUMES}
+      o: bind    
+  mongodb-logs:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${MONGODB_LOGS_VOLUMES}
+      o: bind    
